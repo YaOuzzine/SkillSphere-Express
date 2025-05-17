@@ -9,6 +9,7 @@ dotenv.config();
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // Initialize Express app
 const app = express();
@@ -21,6 +22,7 @@ app.use(morgan('dev')); // Logging
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Root route for API health check
 app.get('/api', (req, res) => {
