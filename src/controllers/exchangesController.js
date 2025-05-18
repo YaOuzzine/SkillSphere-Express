@@ -182,6 +182,8 @@ exports.createExchange = async (req, res) => {
 /**
  * Update exchange status
  */
+// In exchangesController.js - updateExchangeStatus function
+
 exports.updateExchangeStatus = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -198,7 +200,17 @@ exports.updateExchangeStatus = async (req, res) => {
     
     // Check if the exchange exists and user is involved
     const exchangeCheck = await pool.query(
-      'SELECT * FROM exchanges WHERE exchange_id = $1 AND (provider_id = $2 OR requester_id = $2)',
+      `SELECT e.*, 
+              up.full_name AS provider_name,
+              u_provider.email AS provider_email, 
+              ur.full_name AS requester_name,
+              u_requester.email AS requester_email
+       FROM exchanges e
+       JOIN user_profiles up ON e.provider_id = up.user_id
+       JOIN users u_provider ON up.user_id = u_provider.user_id
+       JOIN user_profiles ur ON e.requester_id = ur.user_id
+       JOIN users u_requester ON ur.user_id = u_requester.user_id
+       WHERE e.exchange_id = $1 AND (e.provider_id = $2 OR e.requester_id = $2)`,
       [id, userId]
     );
     
@@ -242,19 +254,49 @@ exports.updateExchangeStatus = async (req, res) => {
               po.title AS offering_title,
               s.name AS skill_name,
               up.full_name AS provider_name,
-              ur.full_name AS requester_name
+              u_provider.email AS provider_email,
+              ur.full_name AS requester_name,
+              u_requester.email AS requester_email
        FROM exchanges e
        JOIN skill_offerings po ON e.offering_id = po.offering_id
        JOIN skills s ON po.skill_id = s.skill_id
        JOIN user_profiles up ON e.provider_id = up.user_id
+       JOIN users u_provider ON up.user_id = u_provider.user_id
        JOIN user_profiles ur ON e.requester_id = ur.user_id
+       JOIN users u_requester ON ur.user_id = u_requester.user_id
        WHERE e.exchange_id = $1`,
       [id]
     );
     
+    const updatedExchange = updatedExchangeQuery.rows[0];
+    
+    // Send notification email
+    if (status === 'canceled') {
+      const canceledBy = userId === exchange.provider_id ? "provider" : "requester";
+      
+      // Determine recipient based on who canceled
+      const recipientEmail = canceledBy === "provider" 
+        ? updatedExchange.requester_email 
+        : updatedExchange.provider_email;
+      
+      const recipientName = canceledBy === "provider" 
+        ? updatedExchange.requester_name 
+        : updatedExchange.provider_name;
+        
+      // Log to verify emails are correctly retrieved
+      console.log(`[EXCHANGES] Sending cancellation email to ${recipientName} (${recipientEmail})`);
+    
+      // Only attempt to send if recipientEmail is defined
+      if (recipientEmail) {
+        // Your email sending code here
+      } else {
+        console.error(`[EXCHANGES] Error: Unable to send email - recipient email is undefined`);
+      }
+    }
+    
     res.json({
       message: `Exchange status updated to ${status}`,
-      exchange: updatedExchangeQuery.rows[0]
+      exchange: updatedExchange
     });
   } catch (error) {
     console.error('[EXCHANGES] Error updating exchange status:', error);

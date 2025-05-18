@@ -144,10 +144,10 @@ exports.updateUserSkill = async (req, res) => {
       return res.status(404).json({ message: 'User skill not found' });
     }
     
-    // Update the skill
+    // Update the skill - REMOVING THE UPDATED_AT REFERENCE
     await pool.query(
       `UPDATE user_skills 
-       SET proficiency_level = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
+       SET proficiency_level = $1, notes = $2
        WHERE user_skill_id = $3`,
       [proficiency_level, notes, user_skill_id]
     );

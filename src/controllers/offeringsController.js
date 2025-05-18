@@ -162,7 +162,7 @@ exports.updateOffering = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { id } = req.params;
-    const { title, description, mode, availability, is_active } = req.body;
+    const { title, description, mode, availability, is_active = true } = req.body;
     
     console.log(`[OFFERINGS] Updating skill offering ${id} for user: ${userId}`);
     
@@ -177,6 +177,9 @@ exports.updateOffering = async (req, res) => {
         message: 'Offering not found or you do not have permission to update it' 
       });
     }
+    
+    // Get the original offering to preserve skill_id
+    const originalOffering = offeringCheck.rows[0];
     
     // Update the offering
     await pool.query(
