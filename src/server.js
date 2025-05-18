@@ -13,6 +13,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const skillsRoutes = require('./routes/skillsRoutes');
 const offeringsRoutes = require('./routes/offeringsRoutes');
 const requestsRoutes = require('./routes/requestsRoutes');
+const exchangesRoutes = require('./routes/exchangesRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 // Initialize Express app
 const app = express();
@@ -29,6 +31,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/skills', skillsRoutes);
 app.use('/api/offerings', offeringsRoutes);
 app.use('/api/requests', requestsRoutes);
+app.use('/api/exchanges', exchangesRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Root route for API health check
 app.get('/api', (req, res) => {
