@@ -64,11 +64,11 @@ exports.getExchangeById = async (req, res) => {
               s.name AS skill_name,
               c.name AS category_name,
               up.full_name AS provider_name,
-              up.user_id AS provider_id,
-              up.email AS provider_email,
+              up.user_id AS provider_id,        -- This is from user_profiles
+              u_provider.email AS provider_email, -- This is from users table for provider
               ur.full_name AS requester_name,
-              ur.user_id AS requester_id,
-              ur.email AS requester_email,
+              ur.user_id AS requester_id,       -- This is from user_profiles
+              u_requester.email AS requester_email, -- This is from users table for requester
               CASE WHEN e.request_id IS NOT NULL THEN r.title ELSE NULL END AS request_title,
               CASE WHEN e.request_id IS NOT NULL THEN r.description ELSE NULL END AS request_description,
               CASE WHEN e.request_id IS NOT NULL THEN r.urgency ELSE NULL END AS request_urgency,
@@ -78,7 +78,9 @@ exports.getExchangeById = async (req, res) => {
        JOIN skills s ON po.skill_id = s.skill_id
        JOIN categories c ON s.category_id = c.category_id
        JOIN user_profiles up ON e.provider_id = up.user_id
+       JOIN users u_provider ON up.user_id = u_provider.user_id -- Join for provider's email
        JOIN user_profiles ur ON e.requester_id = ur.user_id
+       JOIN users u_requester ON ur.user_id = u_requester.user_id -- Join for requester's email
        LEFT JOIN skill_requests r ON e.request_id = r.request_id
        WHERE e.exchange_id = $1 AND (e.provider_id = $2 OR e.requester_id = $2)`,
       [id, userId]
@@ -152,7 +154,7 @@ exports.createExchange = async (req, res) => {
     
     // Get the new exchange details
     const newExchangeId = exchangeResult.rows[0].exchange_id;
-    const exchangeQuery = await pool.query(
+    const newExchangeDetailsQuery = await pool.query( // Renamed variable to avoid conflict
       `SELECT e.*, 
               po.title AS offering_title,
               s.name AS skill_name,
@@ -169,7 +171,7 @@ exports.createExchange = async (req, res) => {
     
     res.status(201).json({
       message: 'Exchange created successfully',
-      exchange: exchangeQuery.rows[0]
+      exchange: newExchangeDetailsQuery.rows[0] // Use the renamed variable
     });
   } catch (error) {
     console.error('[EXCHANGES] Error creating exchange:', error);
